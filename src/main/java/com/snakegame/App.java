@@ -14,8 +14,11 @@ import javafx.stage.Stage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import javafx.scene.media.AudioClip;
 import java.net.URL;
+
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.AudioInputStream;
 
 public class App extends Application {
 
@@ -24,12 +27,29 @@ public class App extends Application {
     private int speedY = 0;
     private int score = 0;
     private List<Segment> snake = new ArrayList<>();
+
     private int foodX;
     private int foodY;
+
+    private int specialFoodX;
+    private int specialFoodY;
+    private boolean isSpecialFoodActive = false;
+    private int specialFoodTimer = 0; 
+
     private boolean eaten = false;
+    private boolean specialeaten = false;
     private boolean gameOver = false;
+    private boolean isPaused = false;
+    public int count = 0;
+
+    private Clip foodClip;
+    private Clip specialfoodClip;
+    private Clip gameOverClip;
+
     URL food = getClass().getResource("/sounds/food.wav");
+    URL sFood = getClass().getResource("/sounds/sfood.wav");
     URL gameover = getClass().getResource("/sounds/gameover.wav");
+
     private static Scene scene;
 
     @Override
@@ -38,18 +58,29 @@ public class App extends Application {
         Canvas canvas = new Canvas(800, 500);
         gc = canvas.getGraphicsContext2D();
 
-        snake.add(new Segment(50, 50));
+        for (int i = 0; i < 30; i++) {
+            snake.add(new Segment(50 - (i * 2), 50));
+        }
 
-        AudioClip foodsound = new AudioClip(food.toExternalForm());
-        foodsound.setVolume(0.8);
-        foodsound.play(0.0);
+        try {
+            AudioInputStream foodStream = AudioSystem.getAudioInputStream(food);
+            foodClip = AudioSystem.getClip();
+            foodClip.open(foodStream);
 
-        AudioClip gameoversound = new AudioClip(gameover.toExternalForm());
-        gameoversound.setVolume(0.8);
-        gameoversound.play(0.0);
+            AudioInputStream specialfoodStream = AudioSystem.getAudioInputStream(sFood);
+            specialfoodClip = AudioSystem.getClip();
+            specialfoodClip.open(specialfoodStream);
+
+            AudioInputStream gameOverStream = AudioSystem.getAudioInputStream(gameover);
+            gameOverClip = AudioSystem.getClip();
+            gameOverClip.open(gameOverStream);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error loading sound files!");
+        }
 
         renderFood();
-        startGameloop(foodsound, gameoversound);
+        startGameloop();
 
         Pane pane = new Pane(canvas);
         pane.setStyle("-fx-background-color: black");
@@ -64,6 +95,11 @@ public class App extends Application {
 
         gc.setFill(Color.YELLOW);
         gc.fillRoundRect(foodX, foodY, 20, 20, 20, 20);
+
+        if (isSpecialFoodActive) {
+            gc.setFill(Color.RED);
+            gc.fillRoundRect(specialFoodX, specialFoodY, 30, 30, 30, 30);
+        }
 
         gc.setFill(Color.GREEN);
         for (Segment part : snake) {
@@ -82,6 +118,13 @@ public class App extends Application {
         eaten = false;
     }
 
+    public void renderSpecialFood() {
+        Random random = new Random();
+        specialFoodX = random.nextInt(770); 
+        specialFoodY = random.nextInt(470); 
+        specialeaten = false;
+    }
+
     public void updateSnake() {
         Segment head = snake.get(0);
 
@@ -90,7 +133,7 @@ public class App extends Application {
 
         snake.add(0, new Segment(newX, newY));
 
-        if (!eaten) {
+        if (!eaten && !specialeaten) {
             snake.remove(snake.size() - 1);
         }
     }
@@ -102,7 +145,6 @@ public class App extends Application {
                 head.x >= 780 ||
                 head.y < 0 ||
                 head.y >= 480) {
-
             gameOver = true;
         }
 
@@ -132,6 +174,22 @@ public class App extends Application {
                 snake.add(new Segment(tail.x, tail.y));
             }
         }
+
+        if (isSpecialFoodActive &&
+                head.x < specialFoodX + 30 &&
+                head.x + 20 > specialFoodX && 
+                head.y < specialFoodY + 30 &&
+                head.y + 20 > specialFoodY) { 
+
+            specialeaten = true;
+            isSpecialFoodActive = false;
+            score += 5;
+
+            Segment tail = snake.get(snake.size() - 1);
+            for (int i = 0; i < 10; i++) {
+                snake.add(new Segment(tail.x, tail.y));
+            }
+        }
     }
 
     public void controls(Scene scene) {
@@ -151,14 +209,17 @@ public class App extends Application {
             } else if (e.getCode() == KeyCode.SPACE) {
                 if (gameOver)
                     restartGame();
+            } else if (e.getCode() == KeyCode.ESCAPE) {
+                isPaused = !isPaused;
             }
         });
     }
 
-    public void startGameloop(AudioClip foodsound, AudioClip gameoversound) {
+    public void startGameloop() {
         AnimationTimer gameloop = new AnimationTimer() {
             @Override
             public void handle(long now) {
+
                 if (gameOver) {
                     gc.setFill(Color.RED);
                     gc.setFont(Font.font("Arial", FontWeight.BOLD, 36));
@@ -169,16 +230,52 @@ public class App extends Application {
                     gc.fillText("Press SPACE to restart", 295, 260);
                     return;
                 }
+
+                if (isPaused) {
+                    gc.setFill(Color.RED);
+                    gc.setFont(Font.font("Arial", FontWeight.BOLD, 36));
+                    gc.fillText("PAUSED", 330, 220);
+
+                    gc.setFill(Color.WHITE);
+                    gc.setFont(Font.font("Arial", 18));
+                    gc.fillText("Press ESCAPE to Resume", 295, 260);
+                    return;
+                }
+
+                count++;
+                if (count % 500 == 0 && !isSpecialFoodActive) {
+                    renderSpecialFood();
+                    isSpecialFoodActive = true;
+                    specialFoodTimer = 300; 
+                }
+
+                if (isSpecialFoodActive) {
+                    specialFoodTimer--;
+                    if (specialFoodTimer <= 0) {
+                        isSpecialFoodActive = false;
+                    }
+                }
+
                 checkCollision();
                 if (gameOver) {
-                    gameoversound.play();
+                    gameOverClip.setFramePosition(0); 
+                    gameOverClip.start();
                 }
+
                 checkEaten();
                 updateSnake();
                 render();
+
                 if (eaten) {
-                    foodsound.play();
+                    foodClip.setFramePosition(0); 
+                    foodClip.start();
                     renderFood();
+                }
+
+                if (specialeaten) {
+                    specialfoodClip.setFramePosition(0); 
+                    specialfoodClip.start();
+                    specialeaten = false; 
                 }
             }
         };
@@ -186,12 +283,18 @@ public class App extends Application {
     }
 
     public void restartGame() {
-
+        score = 0;
+        count = 0;
         gameOver = false;
-        eaten = false; 
+        eaten = false;
+        specialeaten = false;
+        isSpecialFoodActive = false;
         snake.clear();
 
-        snake.add(new Segment(50, 50));
+        for (int i = 0; i < 30; i++) {
+            snake.add(new Segment(50 - (i * 2), 50));
+        }
+
         speedX = 2;
         speedY = 0;
         renderFood();
@@ -200,7 +303,6 @@ public class App extends Application {
     public static void main(String[] args) {
         launch();
     }
-
 }
 
 class Segment {
