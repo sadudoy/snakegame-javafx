@@ -11,9 +11,13 @@ Unlike traditional grid-based snake games, this version runs at a smooth 60 FPS,
 
 ## Screenshots
 
-|                                  Gameplay                                   |                               Game Over Screen                               |
-| :-------------------------------------------------------------------------: | :--------------------------------------------------------------------------: |
-| <img src="screenshots/gameplay.png" alt="Gameplay screenshot" width="400"/> | <img src="screenshots/gameover.png" alt="Game over screenshot" width="400"/> |
+|                                  Gameplay                                   |                                   Pause Menu                                    |
+| :-------------------------------------------------------------------------: | :-----------------------------------------------------------------------------: |
+| <img src="screenshots/gameplay.png" alt="Gameplay screenshot" width="400"/> | <img src="screenshots/pause-menu.png" alt="Pause menu screenshot" width="400"/> |
+
+|                                    Special Food                                     |                                  Game Over                                   |
+| :---------------------------------------------------------------------------------: | :--------------------------------------------------------------------------: |
+| <img src="screenshots/special-food.png" alt="Special food screenshot" width="400"/> | <img src="screenshots/gameover.png" alt="Game over screenshot" width="400"/> |
 
 ---
 
@@ -32,14 +36,14 @@ Unlike traditional grid-based snake games, this version runs at a smooth 60 FPS,
 
 ## Controls
 
-| Key                | Action                         |
-| :----------------- | :----------------------------- |
-| **⬆️ Up Arrow**    | Move Up                        |
-| **⬇️ Down Arrow**  | Move Down                      |
-| **⬅️ Left Arrow**  | Move Left                      |
-| **➡️ Right Arrow** | Move Right                     |
-| **ESC**            | Pause / Resume Game            |
-| **Spacebar**       | Restart Game (After Game Over) |
+| Key             | Action                         |
+| :-------------- | :----------------------------- |
+| **Up Arrow**    | Move Up                        |
+| **Down Arrow**  | Move Down                      |
+| **Left Arrow**  | Move Left                      |
+| **Right Arrow** | Move Right                     |
+| **ESC**         | Pause / Resume Game            |
+| **Spacebar**    | Restart Game (After Game Over) |
 
 > **Note:** The movement logic includes a safety lock to prevent instantly reversing into yourself.
 
